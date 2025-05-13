@@ -5,6 +5,7 @@ from tkinter import filedialog, messagebox, ttk, simpledialog
 from config import Config
 from src.analyzers.pe_analyzer import PEAnalyzer
 from src.analyzers.virustotal_analyzer import VirusTotalAnalyzer
+from src.analyzers.DynamicAnalysis import DynamicAnalyzer
 from src.utils.report_generator import PDFReportGenerator
 
 class HashInputDialog(simpledialog.Dialog):
@@ -79,6 +80,8 @@ class MainWindow:
                    command=self.do_static_analysis).pack(side=tk.LEFT, padx=5)
         ttk.Button(self.top_frame, text="🔬 VirusTotal Analysis", 
                    command=self.do_virustotal_analysis).pack(side=tk.LEFT, padx=5)
+        ttk.Button(self.top_frame, text="🧪 Dynamic Analysis",
+                   command=self.do_dynamic_analysis).pack(side=tk.LEFT, padx=5)
         ttk.Button(self.top_frame, text="📄 Export PDF", 
                    command=self.export_pdf).pack(side=tk.LEFT, padx=5)
 
@@ -206,6 +209,103 @@ class MainWindow:
         for engine, result in results['analysis_results'].items():
             if result.get('category') == 'malicious':
                 self.output_text.insert(tk.END, f"  - {engine}: {result.get('result', 'N/A')}\n")
+
+    def do_dynamic_analysis(self):
+        if not self.current_file:
+            file_path = filedialog.askopenfilename(
+                title="Select File for Dynamic Analysis",
+                filetypes=[("Executable Files", "*.exe *.dll"), ("All files", "*.*")]
+            )
+            if not file_path:
+                return
+        else:
+            file_path = self.current_file
+
+        try:
+            self.output_text.delete(1.0, tk.END)
+            self.output_text.insert(tk.END, self.format_section_header("Dynamic Analysis"))
+            self.output_text.insert(tk.END, "Submitting file to Hybrid Analysis...\nPlease wait, this may take a few minutes.\n")
+            self.root.update()
+
+            analyzer = DynamicAnalyzer()
+            result = analyzer.analyze_file(file_path)
+            
+            if result['success']:
+                self.display_dynamic_analysis(result['data'])
+            else:
+                self.output_text.insert(tk.END, f"\nAnalysis failed: {result['error']}\n")
+        except Exception as e:
+            messagebox.showerror("Error", f"Dynamic analysis failed: {str(e)}")
+
+    def display_dynamic_analysis(self, results):
+        self.output_text.delete(1.0, tk.END)
+        
+        # Display Basic Information
+        self.output_text.insert(tk.END, self.format_section_header("Basic Information"))
+        for key, value in results['basic_info'].items():
+            self.output_text.insert(tk.END, f"{key}: {value}\n")
+        
+        # Display Signatures
+        if results['signatures']:
+            self.output_text.insert(tk.END, self.format_section_header("Detected Signatures"))
+            for sig in results['signatures']:
+                self.output_text.insert(tk.END, f"Name: {sig.get('name', 'Unknown')}\n")
+                if sig.get('description'):
+                    self.output_text.insert(tk.END, f"Description: {sig.get('description')}\n")
+                self.output_text.insert(tk.END, "-" * 40 + "\n")
+        
+        # Display Processes
+        if results['processes']:
+            self.output_text.insert(tk.END, self.format_section_header("Processes"))
+            for proc in results['processes']:
+                self.output_text.insert(tk.END, f"Process: {proc.get('process_name', 'Unknown')}\n")
+                if proc.get('command_line'):
+                    self.output_text.insert(tk.END, f"Command Line: {proc.get('command_line')}\n")
+                self.output_text.insert(tk.END, "\n")
+        
+        # Display Network Activity
+        if results['network_hosts']:
+            self.output_text.insert(tk.END, self.format_section_header("Network Activity"))
+            for host in results['network_hosts']:
+                hostname = host.get('hostname') or host.get('ip', 'Unknown')
+                self.output_text.insert(tk.END, f"Host: {hostname}\n")
+                if host.get('port'):
+                    self.output_text.insert(tk.END, f"Port: {host['port']}\n")
+                if host.get('protocol'):
+                    self.output_text.insert(tk.END, f"Protocol: {host['protocol']}\n")
+                self.output_text.insert(tk.END, "\n")
+        
+        # Display URLs
+        if results['extracted_urls']:
+            self.output_text.insert(tk.END, self.format_section_header("Extracted URLs"))
+            for url in results['extracted_urls']:
+                self.output_text.insert(tk.END, f"• {url}\n")
+        
+        # Display MITRE ATT&CK
+        if results['mitre_attacks']:
+            self.output_text.insert(tk.END, self.format_section_header("MITRE ATT&CK Techniques"))
+            for attack in results['mitre_attacks']:
+                self.output_text.insert(tk.END, f"Technique: {attack.get('technique', 'Unknown')}\n")
+                if attack.get('description'):
+                    self.output_text.insert(tk.END, f"Description: {attack.get('description')}\n")
+                self.output_text.insert(tk.END, "\n")
+        
+        # Display Dropped Files
+        if results['dropped_files']:
+            self.output_text.insert(tk.END, self.format_section_header("Dropped Files"))
+            for file in results['dropped_files']:
+                self.output_text.insert(tk.END, f"Name: {file.get('name', 'Unknown')}\n")
+                if file.get('type'):
+                    self.output_text.insert(tk.END, f"Type: {file.get('type')}\n")
+                if file.get('sha256'):
+                    self.output_text.insert(tk.END, f"SHA256: {file.get('sha256')}\n")
+                self.output_text.insert(tk.END, "\n")
+        
+        # Display Interesting Behaviors
+        if results['interesting_behaviors']:
+            self.output_text.insert(tk.END, self.format_section_header("Interesting Behaviors"))
+            for key, value in results['interesting_behaviors'].items():
+                self.output_text.insert(tk.END, f"{key}:\n{value}\n\n")
 
     def export_pdf(self):
         try:
