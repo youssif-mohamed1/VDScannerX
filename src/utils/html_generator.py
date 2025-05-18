@@ -165,10 +165,10 @@ class HTMLReportGenerator:
         return html
     
     def generate_from_text(self, text_content, output_file=None):
+        """Generate an HTML report from text content."""
         if not output_file:
             timestamp = time.strftime("%Y%m%d_%H%M%S")
-            output_dir = Config.OUTPUT_FOLDER
-            os.makedirs(output_dir, exist_ok=True)
+            output_dir = Config.OUTPUT_HTML
             output_file = os.path.join(output_dir, f"analysis_report_{timestamp}.html")
         
         html = '<!DOCTYPE html>\n<html>\n<head>\n'

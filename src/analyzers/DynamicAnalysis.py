@@ -2,6 +2,7 @@ import requests
 import time
 import json
 from config import Config
+from src.utils.json_saver import JSONSaver
 
 class DynamicAnalyzer:
     def __init__(self):
@@ -22,6 +23,8 @@ class DynamicAnalyzer:
 
         try:
             json_data = response.json()
+            if response.status_code == 200:
+                JSONSaver.save_api_response(json_data, 'hybrid_analysis_submit')
         except Exception:
             raise Exception(f"Failed to parse response: {response.text}")
 
@@ -51,7 +54,10 @@ class DynamicAnalyzer:
                         report_response = requests.get(report_url, headers=self.HEADERS)
                         if report_response.status_code == 200:
                             try:
-                                return report_response.json()
+                                json_data = report_response.json()
+                                # Save the successful report
+                                JSONSaver.save_api_response(json_data, 'hybrid_analysis_report')
+                                return json_data
                             except Exception as e:
                                 print(f"Error parsing report (attempt {attempt + 1}): {str(e)}")
                                 continue
