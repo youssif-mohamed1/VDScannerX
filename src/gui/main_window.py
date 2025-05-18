@@ -8,6 +8,8 @@ from src.analyzers.pe_analyzer import PEAnalyzer
 from src.analyzers.virustotal_analyzer import VirusTotalAnalyzer
 from src.analyzers.DynamicAnalysis import DynamicAnalyzer
 from src.utils.report_generator import PDFReportGenerator
+from src.utils.html_generator import HTMLReportGenerator
+import webbrowser
 
 class HashInputDialog(simpledialog.Dialog):
     def body(self, master):
@@ -61,13 +63,15 @@ class MainWindow:
 
         # Analysis buttons (smaller width)
         ctk.CTkButton(self.button_frame, text="📁 Static", 
-                      command=self.do_static_analysis, width=100, height=32).pack(side="left", padx=3)
+                    command=self.do_static_analysis, width=100, height=32).pack(side="left", padx=3)
         ctk.CTkButton(self.button_frame, text="🔬 VT", 
-                      command=self.do_virustotal_analysis, width=100, height=32).pack(side="left", padx=3)
+                    command=self.do_virustotal_analysis, width=100, height=32).pack(side="left", padx=3)
         ctk.CTkButton(self.button_frame, text="🧪 Dynamic",
-                      command=self.do_dynamic_analysis, width=100, height=32).pack(side="left", padx=3)
+                    command=self.do_dynamic_analysis, width=100, height=32).pack(side="left", padx=3)
         ctk.CTkButton(self.button_frame, text="📄 PDF", 
-                      command=self.export_pdf, width=100, height=32).pack(side="left", padx=3)
+                    command=self.export_pdf, width=100, height=32).pack(side="left", padx=3)
+        ctk.CTkButton(self.button_frame, text="🌐 Export HTML", 
+                    command=self.export_html, width=100, height=32).pack(side="left", padx=3)
 
         # Filter bar and Apply Filter button (in button_frame)
         self.filter_var = tk.StringVar(value="All")
@@ -101,7 +105,6 @@ class MainWindow:
         self.update_output_text_theme()
 
     def setup_output_frame(self):
-        # For the main output panel/frame:
         self.output_panel = ctk.CTkFrame(
             self.main_container,
             fg_color=("#fff", "#23272f"),         # light, dark
@@ -111,10 +114,9 @@ class MainWindow:
         )
         self.output_panel.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # For the output textbox:
         self.output_text = ctk.CTkTextbox(
             self.output_panel,
-            fg_color="transparent",               # inherits from parent
+            fg_color="transparent",               
             text_color=("#222", "#fff"),
             font=("Consolas", 12)
         )
@@ -202,7 +204,6 @@ class MainWindow:
                 self.output_text.insert(tk.END, f"\n[+] ... and {len(strings) - 100} more strings not shown.\n")
 
     def do_virustotal_analysis(self):
-        # If no sample, prompt for hash
         if not self.current_file:
             hash_dialog = HashInputDialog(self.root)
             file_hash = hash_dialog.result
@@ -211,20 +212,17 @@ class MainWindow:
                 self.output_text.insert("end", "No hash provided. Operation cancelled.")
                 return
         else:
-            # Ask user: use sample or enter hash?
             choice = messagebox.askyesno(
                 "VirusTotal Analysis",
                 "Use uploaded sample's hash?\n\nYes: Use uploaded sample\nNo: Enter a hash manually"
             )
             if choice:
-                # Use uploaded sample's hash
                 file_hash = self.pe_analyzer.hashes.get('SHA256')
                 if not file_hash:
                     self.output_text.delete(1.0, "end")
                     self.output_text.insert("end", "No SHA256 hash found. Please run static analysis first.")
                     return
             else:
-                # Prompt for hash
                 hash_dialog = HashInputDialog(self.root)
                 file_hash = hash_dialog.result
                 if not file_hash:
@@ -374,6 +372,22 @@ class MainWindow:
             messagebox.showinfo("Success", f"Report saved as {filename} in output_pdf directory")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export PDF: {str(e)}")
+
+    def export_html(self):
+        try:
+            current_content = self.output_text.get(1.0, tk.END)
+            if not current_content.strip():
+                messagebox.showwarning("Warning", "No content to export.")
+                return
+
+            html_generator = HTMLReportGenerator()
+            output_file = html_generator.generate_from_text(current_content)
+            
+            webbrowser.open('file://' + os.path.realpath(output_file))
+            
+            messagebox.showinfo("Success", f"HTML report saved and opened in browser:\n{os.path.basename(output_file)}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export HTML: {str(e)}")
 
     def update_output_text_theme(self):
         # Detect current mode
