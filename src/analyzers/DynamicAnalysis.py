@@ -1,11 +1,11 @@
 import requests
 import time
 import json
+from config import Config
 
 class DynamicAnalyzer:
     def __init__(self):
-        # === Replace this with your actual API key ===
-        self.API_KEY = "swwy0tx86d507b75m4e63m05848d6fcfl7q9hpxqecfd1030vdiw15jv8a3fcdf7"
+        self.API_KEY = Config.HYBRID_ANALYSIS_API_KEY
         self.HEADERS = {
             'api-key': self.API_KEY,
             'User-Agent': 'VxApi Client'
@@ -14,7 +14,7 @@ class DynamicAnalyzer:
     def submit_file(self, file_path):
         with open(file_path, 'rb') as f:
             files = {'file': (file_path, f)}
-            data = {'environment_id': '120'}  # Windows 10 64-bit
+            data = {'environment_id': '120'} 
             response = requests.post(
                 'https://www.hybrid-analysis.com/api/v2/submit/file',
                 headers=self.HEADERS, files=files, data=data
