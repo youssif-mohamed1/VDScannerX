@@ -2,6 +2,7 @@ import os
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, simpledialog
+import customtkinter as ctk
 from config import Config
 from src.analyzers.pe_analyzer import PEAnalyzer
 from src.analyzers.virustotal_analyzer import VirusTotalAnalyzer
@@ -10,8 +11,10 @@ from src.utils.report_generator import PDFReportGenerator
 
 class HashInputDialog(simpledialog.Dialog):
     def body(self, master):
-        ttk.Label(master, text="Enter hash code:").grid(row=0, column=0, padx=5, pady=5)
-        self.hash_entry = ttk.Entry(master, width=70)
+        self.label = ctk.CTkLabel(master, text="Enter hash code:")
+        self.label.grid(row=0, column=0, padx=5, pady=5)
+
+        self.hash_entry = ctk.CTkEntry(master, width=400)
         self.hash_entry.grid(row=0, column=1, padx=5, pady=5)
         return self.hash_entry
 
@@ -21,69 +24,106 @@ class HashInputDialog(simpledialog.Dialog):
 class MainWindow:
     def __init__(self, root):
         self.root = root
-        self.root.title("PE File Analyzer")
-        self.root.geometry("1200x800")
-        
+        self.root.title("VDScannerX")
+        self.root.geometry("900x600")
+        self.root.resizable(False, False)
+
+        ctk.set_appearance_mode("Light")
+        ctk.set_default_color_theme("blue")
+
+        # Top frame for switch
+        top_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        top_frame.pack(fill="x", pady=10, padx=10)
+
+        # Dark mode switch (top right)
+        self.appearance_switch = ctk.CTkSwitch(
+            top_frame, text="🌗 Dark Mode", command=self.toggle_mode
+        )
+        self.appearance_switch.pack(side="right", padx=10)
+
+        # Example content (replace with your widgets)
+        self.label = ctk.CTkLabel(
+            self.root,
+            text="VDScannerX: Analyze. Detect. Understand",
+            font=ctk.CTkFont(size=22, weight="bold")
+        )
+        self.label.pack(pady=2)
+
         self.pe_analyzer = PEAnalyzer()
         self.vt_analyzer = VirusTotalAnalyzer()
         self.current_file = None
         
         self.setup_gui()
 
-    def setup_gui(self):
-        self.main_container = ttk.Frame(self.root)
-        self.main_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    def toggle_mode(self):
+        mode = self.appearance_switch.get()
+        ctk.set_appearance_mode("Dark" if mode else "Light")
+        self.update_output_text_theme()
 
-        self.top_frame = ttk.Frame(self.main_container)
-        self.top_frame.pack(fill=tk.X, padx=5, pady=5)
+    def setup_gui(self):
+        self.top_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.top_frame.pack(fill="x", padx=10, pady=10)
+
+        # Add buttons to the top_frame
+        ctk.CTkButton(self.top_frame, text="📁 Static Analysis", 
+                      command=self.do_static_analysis, width=150).pack(side="left", padx=5)
+        ctk.CTkButton(self.top_frame, text="🔬 VirusTotal Analysis", 
+                      command=self.do_virustotal_analysis, width=170).pack(side="left", padx=5)
+        ctk.CTkButton(self.top_frame, text="🧪 Dynamic Analysis",
+                      command=self.do_dynamic_analysis, width=150).pack(side="left", padx=5)
+        ctk.CTkButton(self.top_frame, text="📄 Export PDF", 
+                      command=self.export_pdf, width=130).pack(side="left", padx=5)
+
+        self.main_container = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.main_container.pack(fill="both", expand=True, padx=5, pady=5)
 
         self.setup_filter_frame()
         self.setup_output_frame()
-        self.setup_buttons()
 
     def setup_filter_frame(self):
-        self.filter_frame = ttk.Frame(self.top_frame)
+        self.filter_frame = ctk.CTkFrame(self.top_frame, fg_color="transparent")
         self.filter_var = tk.StringVar(value="All")
-        
-        filter_label = ttk.Label(self.filter_frame, text="String Filter:")
-        filter_label.pack(side=tk.LEFT, padx=5)
-        
-        self.filter_combo = ttk.Combobox(
-            self.filter_frame, 
-            textvariable=self.filter_var,
+
+        filter_label = ctk.CTkLabel(self.filter_frame, text="String Filter:")
+        filter_label.pack(side="left", padx=5)
+
+        self.filter_combo = ctk.CTkComboBox(
+            self.filter_frame,
+            variable=self.filter_var,
             values=list(Config.FILTERS.keys()),
-            state="readonly",
-            width=20
+            width=180
         )
-        self.filter_combo.pack(side=tk.LEFT, padx=5)
-        
-        self.apply_filter_btn = ttk.Button(
+        self.filter_combo.pack(side="left", padx=5)
+
+        self.apply_filter_btn = ctk.CTkButton(
             self.filter_frame,
             text="Apply Filter",
-            command=self.refresh_strings
+            command=self.refresh_strings,
+            width=120
         )
-        self.apply_filter_btn.pack(side=tk.LEFT, padx=5)
+        self.apply_filter_btn.pack(side="left", padx=5)
+
+        self.filter_frame.pack(side="right", padx=5)
 
     def setup_output_frame(self):
-        output_frame = ttk.Frame(self.main_container)
-        output_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        # For the main output panel/frame:
+        self.output_panel = ctk.CTkFrame(
+            self.main_container,
+            fg_color=("#fff", "#23272f"),         # light, dark
+            border_color=("#ccc", "#181a20"),
+            border_width=2,
+            corner_radius=10
+        )
+        self.output_panel.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.output_text = tk.Text(output_frame, wrap=tk.WORD, font=("Courier", 10))
-        scrollbar = ttk.Scrollbar(output_frame, orient=tk.VERTICAL, command=self.output_text.yview)
-        self.output_text.configure(yscrollcommand=scrollbar.set)
-
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-    def setup_buttons(self):
-        ttk.Button(self.top_frame, text="📁 Static Analysis", 
-                   command=self.do_static_analysis).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.top_frame, text="🔬 VirusTotal Analysis", 
-                   command=self.do_virustotal_analysis).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.top_frame, text="🧪 Dynamic Analysis",
-                   command=self.do_dynamic_analysis).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.top_frame, text="📄 Export PDF", 
-                   command=self.export_pdf).pack(side=tk.LEFT, padx=5)
+        # For the output textbox:
+        self.output_text = ctk.CTkTextbox(
+            self.output_panel,
+            fg_color="transparent",               # inherits from parent
+            text_color=("#222", "#fff"),
+            font=("Consolas", 12)
+        )
+        self.output_text.pack(fill="both", expand=True, padx=8, pady=8)
 
     def format_section_header(self, title):
         width = 80
@@ -108,8 +148,10 @@ class MainWindow:
 
     def display_pe_analysis(self, results):
         self.output_text.delete(1.0, tk.END)
-        self.output_text.insert(tk.END, self.format_section_header("File Information"))
+        self.output_text.insert(tk.END, self.format_section_header("Static Analysis"))
+        self.output_text.insert(tk.END, f"File: {self.current_file}\n")
         
+        self.output_text.insert(tk.END, self.format_section_header("File Information"))
         for key, value in results['basic_info'].items():
             self.output_text.insert(tk.END, f"{key}: {value}\n")
         
@@ -323,4 +365,12 @@ class MainWindow:
             
             messagebox.showinfo("Success", f"Report saved as {filename} in output_pdf directory")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export PDF: {str(e)}") 
+            messagebox.showerror("Error", f"Failed to export PDF: {str(e)}")
+
+    def update_output_text_theme(self):
+        # Detect current mode
+        mode = ctk.get_appearance_mode()
+        if mode == "Dark":
+            self.output_text.config(bg="#23272f", fg="#f5f5f5", insertbackground="#f5f5f5")
+        else:
+            self.output_text.config(bg="#ffffff", fg="#222222", insertbackground="#222222")
