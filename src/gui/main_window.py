@@ -26,84 +26,71 @@ class MainWindow:
         self.root = root
         self.root.title("VDScannerX")
         self.root.geometry("900x600")
-        self.root.resizable(False, False)
+        self.root.resizable(True, True)  # Allow maximization
 
         ctk.set_appearance_mode("Light")
         ctk.set_default_color_theme("blue")
 
-        # Top frame for switch
-        top_frame = ctk.CTkFrame(self.root, fg_color="transparent")
-        top_frame.pack(fill="x", pady=10, padx=10)
-
-        # Dark mode switch (top right)
+        # --- Top frame for dark mode toggle (top right) ---
+        self.top_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.top_frame.pack(fill="x", pady=(10, 0), padx=10)
         self.appearance_switch = ctk.CTkSwitch(
-            top_frame, text="🌗 Dark Mode", command=self.toggle_mode
+            self.top_frame, text="🌗 Dark Mode", command=self.toggle_mode
         )
-        self.appearance_switch.pack(side="right", padx=10)
+        self.appearance_switch.pack(side="right", padx=0)
 
-        # Example content (replace with your widgets)
+        # --- Title label (centered, below toggle) ---
         self.label = ctk.CTkLabel(
             self.root,
             text="VDScannerX: Analyze. Detect. Understand",
             font=ctk.CTkFont(size=22, weight="bold")
         )
-        self.label.pack(pady=2)
+        self.label.pack(pady=(10, 2))
 
+        # --- Frame for buttons and filter bar (below the title) ---
+        self.button_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.button_frame.pack(fill="x", pady=(10, 10), padx=10)
+
+        # Analysis buttons (smaller width)
+        ctk.CTkButton(self.button_frame, text="📁 Static", 
+                      command=self.do_static_analysis, width=100, height=32).pack(side="left", padx=3)
+        ctk.CTkButton(self.button_frame, text="🔬 VT", 
+                      command=self.do_virustotal_analysis, width=100, height=32).pack(side="left", padx=3)
+        ctk.CTkButton(self.button_frame, text="🧪 Dynamic",
+                      command=self.do_dynamic_analysis, width=100, height=32).pack(side="left", padx=3)
+        ctk.CTkButton(self.button_frame, text="📄 PDF", 
+                      command=self.export_pdf, width=100, height=32).pack(side="left", padx=3)
+
+        # Filter bar and Apply Filter button (in button_frame)
+        self.filter_var = tk.StringVar(value="All")
+        ctk.CTkLabel(self.button_frame, text="String Filter:").pack(side="left", padx=5)
+        self.filter_combo = ctk.CTkComboBox(
+            self.button_frame,
+            variable=self.filter_var,
+            values=list(Config.FILTERS.keys()),
+            width=100
+        )
+        self.filter_combo.pack(side="left", padx=3)
+        ctk.CTkButton(
+            self.button_frame,
+            text="Apply",
+            command=self.refresh_strings,
+            width=70, height=32
+        ).pack(side="left", padx=3)
+
+        # --- Main container and output frame ---
         self.pe_analyzer = PEAnalyzer()
         self.vt_analyzer = VirusTotalAnalyzer()
         self.current_file = None
-        
-        self.setup_gui()
+
+        self.main_container = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.main_container.pack(fill="both", expand=True, padx=5, pady=5)
+        self.setup_output_frame()
 
     def toggle_mode(self):
         mode = self.appearance_switch.get()
         ctk.set_appearance_mode("Dark" if mode else "Light")
         self.update_output_text_theme()
-
-    def setup_gui(self):
-        self.top_frame = ctk.CTkFrame(self.root, fg_color="transparent")
-        self.top_frame.pack(fill="x", padx=10, pady=10)
-
-        # Add buttons to the top_frame
-        ctk.CTkButton(self.top_frame, text="📁 Static Analysis", 
-                      command=self.do_static_analysis, width=150).pack(side="left", padx=5)
-        ctk.CTkButton(self.top_frame, text="🔬 VirusTotal Analysis", 
-                      command=self.do_virustotal_analysis, width=170).pack(side="left", padx=5)
-        ctk.CTkButton(self.top_frame, text="🧪 Dynamic Analysis",
-                      command=self.do_dynamic_analysis, width=150).pack(side="left", padx=5)
-        ctk.CTkButton(self.top_frame, text="📄 Export PDF", 
-                      command=self.export_pdf, width=130).pack(side="left", padx=5)
-
-        self.main_container = ctk.CTkFrame(self.root, fg_color="transparent")
-        self.main_container.pack(fill="both", expand=True, padx=5, pady=5)
-
-        self.setup_filter_frame()
-        self.setup_output_frame()
-
-    def setup_filter_frame(self):
-        self.filter_frame = ctk.CTkFrame(self.top_frame, fg_color="transparent")
-        self.filter_var = tk.StringVar(value="All")
-
-        filter_label = ctk.CTkLabel(self.filter_frame, text="String Filter:")
-        filter_label.pack(side="left", padx=5)
-
-        self.filter_combo = ctk.CTkComboBox(
-            self.filter_frame,
-            variable=self.filter_var,
-            values=list(Config.FILTERS.keys()),
-            width=180
-        )
-        self.filter_combo.pack(side="left", padx=5)
-
-        self.apply_filter_btn = ctk.CTkButton(
-            self.filter_frame,
-            text="Apply Filter",
-            command=self.refresh_strings,
-            width=120
-        )
-        self.apply_filter_btn.pack(side="left", padx=5)
-
-        self.filter_frame.pack(side="right", padx=5)
 
     def setup_output_frame(self):
         # For the main output panel/frame:
@@ -142,7 +129,7 @@ class MainWindow:
             self.current_file = file_path
             analysis_results = self.pe_analyzer.load_file(file_path)
             self.display_pe_analysis(analysis_results)
-            self.filter_frame.pack(side=tk.RIGHT, padx=5)
+            self.top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to analyze file: {str(e)}")
 
