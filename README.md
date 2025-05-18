@@ -1,9 +1,10 @@
 # VDScannerX
 
-![Main Interface]()
-![Analysis Results]()
-![Report Generation]()
-![Dark Mode Interface]()
+![Main Interface](/ScreenShots/Home_interface.png)
+![Analysis Results](/ScreenShots/Analysis_Result.png)
+![Report Generation](/ScreenShots/Report_Generation.png)
+![HTML Export](/ScreenShots/HTML_Export.jpeg)
+![Dark Mode Interface](/ScreenShots/Dark_Mode.png)
 
 ## Table of Contents
 
@@ -51,10 +52,7 @@ VDScannerX is a powerful desktop application built in Python for analyzing poten
 - **Detailed Reporting**: Generate comprehensive PDF reports of analysis results
 - **HTML Export**: Export analysis results to interactive HTML reports with:
   - Collapsible sections
-  - Search functionality
   - Mobile-responsive design
-  - Interactive charts and graphs
-  - Shareable format for team collaboration
 
 ## Getting Started
 
@@ -64,14 +62,15 @@ VDScannerX is a powerful desktop application built in Python for analyzing poten
 - Windows Operating System
 - Internet connection for dependency installation
 - VirusTotal API key (free or premium)
+- Hybird Analysis API Key
 
 ### Installation
 
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/yourusername/D-S_Malware_Analyzer.git
-   cd D-S_Malware_Analyzer
+   git clone https://github.com/yourusername/VDScannerX.git
+   cd VDScannerX
    ```
 
 2. **Create Virtual Environment (Recommended)**
