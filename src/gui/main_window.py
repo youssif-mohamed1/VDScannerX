@@ -51,6 +51,14 @@ class MainWindow:
         self.button_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         self.button_frame.pack(fill="x", pady=(10, 10), padx=10)
 
+        # Upload button (add this before the analysis buttons)
+        ctk.CTkButton(
+            self.button_frame,
+            text="⬆ Upload",
+            command=self.upload_sample,
+            width=90, height=32
+        ).pack(side="left", padx=3)
+
         # Analysis buttons (smaller width)
         ctk.CTkButton(self.button_frame, text="📁 Static", 
                       command=self.do_static_analysis, width=100, height=32).pack(side="left", padx=3)
@@ -118,20 +126,16 @@ class MainWindow:
         return f"\n{'='*width}\n{' '*padding}{title}\n{'='*width}\n"
 
     def do_static_analysis(self):
-        file_path = filedialog.askopenfilename(
-            title="Select PE File",
-            filetypes=[("Executable Files", "*.exe *.dll"), ("All files", "*.*")]
-        )
-        if not file_path:
+        if not self.current_file:
+            self.output_text.delete(1.0, "end")
+            self.output_text.insert("end", "Please upload a sample first using the Upload button.")
             return
-
         try:
-            self.current_file = file_path
-            analysis_results = self.pe_analyzer.load_file(file_path)
+            analysis_results = self.pe_analyzer.load_file(self.current_file)
             self.display_pe_analysis(analysis_results)
-            self.top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to analyze file: {str(e)}")
+            self.output_text.delete(1.0, "end")
+            self.output_text.insert("end", f"Failed to analyze file: {str(e)}")
 
     def display_pe_analysis(self, results):
         self.output_text.delete(1.0, tk.END)
@@ -198,27 +202,50 @@ class MainWindow:
                 self.output_text.insert(tk.END, f"\n[+] ... and {len(strings) - 100} more strings not shown.\n")
 
     def do_virustotal_analysis(self):
-        if self.current_file:
-            file_hash = self.pe_analyzer.hashes['SHA256']
-        else:
-            dialog = HashInputDialog(self.root, title="VirusTotal Hash Search")
-            if not dialog.result:
+        # If no sample, prompt for hash
+        if not self.current_file:
+            hash_dialog = HashInputDialog(self.root)
+            file_hash = hash_dialog.result
+            if not file_hash:
+                self.output_text.delete(1.0, "end")
+                self.output_text.insert("end", "No hash provided. Operation cancelled.")
                 return
-            file_hash = dialog.result
+        else:
+            # Ask user: use sample or enter hash?
+            choice = messagebox.askyesno(
+                "VirusTotal Analysis",
+                "Use uploaded sample's hash?\n\nYes: Use uploaded sample\nNo: Enter a hash manually"
+            )
+            if choice:
+                # Use uploaded sample's hash
+                file_hash = self.pe_analyzer.hashes.get('SHA256')
+                if not file_hash:
+                    self.output_text.delete(1.0, "end")
+                    self.output_text.insert("end", "No SHA256 hash found. Please run static analysis first.")
+                    return
+            else:
+                # Prompt for hash
+                hash_dialog = HashInputDialog(self.root)
+                file_hash = hash_dialog.result
+                if not file_hash:
+                    self.output_text.delete(1.0, "end")
+                    self.output_text.insert("end", "No hash provided. Operation cancelled.")
+                    return
 
         try:
-            self.output_text.delete(1.0, tk.END)
-            self.output_text.insert(tk.END, self.format_section_header("VirusTotal Analysis"))
-            self.output_text.insert(tk.END, f"Analyzing hash: {file_hash}\nPlease wait...\n")
+            self.output_text.delete(1.0, "end")
+            self.output_text.insert("end", self.format_section_header("VirusTotal Analysis"))
+            self.output_text.insert("end", f"Analyzing hash: {file_hash}\nPlease wait...\n")
             self.root.update()
 
             result = self.vt_analyzer.get_report(file_hash)
             if result:
                 self.display_vt_results(result)
             else:
-                self.output_text.insert(tk.END, "No results found on VirusTotal.\n")
+                self.output_text.insert("end", "No results found on VirusTotal.\n")
         except Exception as e:
-            messagebox.showerror("Error", f"VirusTotal analysis failed: {str(e)}")
+            self.output_text.delete(1.0, "end")
+            self.output_text.insert("end", f"VirusTotal analysis failed: {str(e)}")
 
     def display_vt_results(self, results):
         self.output_text.insert(tk.END, self.format_section_header("Basic Information"))
@@ -241,30 +268,24 @@ class MainWindow:
 
     def do_dynamic_analysis(self):
         if not self.current_file:
-            file_path = filedialog.askopenfilename(
-                title="Select File for Dynamic Analysis",
-                filetypes=[("Executable Files", "*.exe *.dll"), ("All files", "*.*")]
-            )
-            if not file_path:
-                return
-        else:
-            file_path = self.current_file
-
+            self.output_text.delete(1.0, "end")
+            self.output_text.insert("end", "Please upload a sample first using the Upload button.")
+            return
         try:
-            self.output_text.delete(1.0, tk.END)
-            self.output_text.insert(tk.END, self.format_section_header("Dynamic Analysis"))
-            self.output_text.insert(tk.END, "Submitting file to Hybrid Analysis...\nPlease wait, this may take a few minutes.\n")
+            self.output_text.delete(1.0, "end")
+            self.output_text.insert("end", self.format_section_header("Dynamic Analysis"))
+            self.output_text.insert("end", "Submitting file to Hybrid Analysis...\nPlease wait, this may take a few minutes.\n")
             self.root.update()
 
             analyzer = DynamicAnalyzer()
-            result = analyzer.analyze_file(file_path)
-            
+            result = analyzer.analyze_file(self.current_file)
             if result['success']:
                 self.display_dynamic_analysis(result['data'])
             else:
-                self.output_text.insert(tk.END, f"\nAnalysis failed: {result['error']}\n")
+                self.output_text.insert("end", f"\nAnalysis failed: {result['error']}\n")
         except Exception as e:
-            messagebox.showerror("Error", f"Dynamic analysis failed: {str(e)}")
+            self.output_text.delete(1.0, "end")
+            self.output_text.insert("end", f"Dynamic analysis failed: {str(e)}")
 
     def display_dynamic_analysis(self, results):
         self.output_text.delete(1.0, tk.END)
@@ -361,3 +382,16 @@ class MainWindow:
             self.output_text.config(bg="#23272f", fg="#f5f5f5", insertbackground="#f5f5f5")
         else:
             self.output_text.config(bg="#ffffff", fg="#222222", insertbackground="#222222")
+
+    def upload_sample(self):
+        file_path = filedialog.askopenfilename(
+            title="Select Sample File",
+            filetypes=[("Executable Files", "*.exe *.dll"), ("All files", "*.*")]
+        )
+        if file_path:
+            self.current_file = file_path
+            self.output_text.delete(1.0, "end")
+            self.output_text.insert("end", f"Sample uploaded:\n{file_path}\n\nReady for analysis.")
+        else:
+            self.output_text.delete(1.0, "end")
+            self.output_text.insert("end", "No sample selected.")
