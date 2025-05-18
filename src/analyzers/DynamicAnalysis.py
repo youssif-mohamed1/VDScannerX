@@ -93,16 +93,65 @@ class DynamicAnalyzer:
                 'signatures': [
                     {
                         'name': sig.get('name', 'Unknown'),
-                        'description': sig.get('description', '')
+                        'description': sig.get('description', ''),
+                        'threat_level': sig.get('threat_level', 'Unknown'),
+                        'threat_level_human': sig.get('threat_level_human', 'Unknown'),
+                        'category': sig.get('category', 'Uncategorized')
                     }
                     for sig in report_data.get('signatures', [])
                 ],
-                'processes': report_data.get('processes', []),
-                'network_hosts': report_data.get('network_hosts', []),
+                'processes': [
+                    {
+                        'uid': proc.get('uid','Unknown'),
+                        'parentuid': proc.get('parentuid','Unknown'),
+                        'name': proc.get('name','Unknown'),
+                        'normalized_path': proc.get('normalized_path','Unknown'),
+                        'command_line': proc.get('command_line','Unknown'),
+                        'sha256': proc.get('sha256','Unknown'),
+                        'av_label': proc.get('av_label','Unknown'),
+                        'av_matched': proc.get('av_matched','Unknown'),
+                        'av_total': proc.get('av_total','Unknown'),
+                        'pid': proc.get('pid','Unknown'),
+                        'icon': proc.get('icon','Unknown'),
+                        'file_accesses': proc.get('file_accesses','Unknown'),
+                        'created_files': proc.get('created_files','Unknown'),
+                        'registry': proc.get('registry','Unknown'),
+                        'mutants': proc.get('mutants','Unknown'),
+                        'handles': proc.get('handles','Unknown'),
+                        'streams': proc.get('streams','Unknown'),
+                        'script_calls': proc.get('script_calls','Unknown'),
+                        'process_flags': proc.get('process_flags','Unknown'),
+                        'amsi_calls': proc.get('amsi_calls','Unknown'),
+                        'modules': proc.get('modules','Unknown')
+                    }
+                    for proc in report_data.get('processes', [])
+                ],    
                 'extracted_urls': report_data.get('extracted_urls', []),
-                'mitre_attacks': report_data.get('mitre_attacks', []),
-                'dropped_files': report_data.get('dropped_files', []),
-                'interesting_behaviors': report_data.get('interesting', {})
+                'mitre_attacks': [
+                    {
+                        'tactic': attack.get('tactic'),
+                        'technique': attack.get('technique'),
+                        'attck_id': attack.get('attck_id'),
+                        'attck_id_wiki': attack.get('attck_id_wiki'),
+                        'malicious_identifiers_count': attack.get('malicious_identifiers_count', 0),
+                        'suspicious_identifiers_count': attack.get('suspicious_identifiers_count', 0),
+                        'informative_identifiers_count': attack.get('informative_identifiers_count', 0),
+                        'description': attack.get('description'),
+                    }
+                    for attack in report_data.get('mitre_attcks', [])
+                ],
+                'dropped_files': [
+                    {
+                        'name': file.get('name'),
+                        'file_path': file.get('file_path'),
+                        'file_size': file.get('file_size'),
+                        'type': file.get('description'),
+                        'sha256': file.get('sha256'),
+                        'threat_level_readable': file.get('threat_level_readable'),
+                    }
+                    for file in report_data.get('extracted_files', [])
+                ],
+                'interesting_behaviors': report_data.get('interesting', {}) if isinstance(report_data.get('interesting'), dict) else {}
             }
             
             return {
