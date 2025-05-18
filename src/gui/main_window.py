@@ -308,73 +308,149 @@ class MainWindow:
     def display_dynamic_analysis(self, results):
         self.output_text.delete(1.0, tk.END)
         
-        # Display Basic Information
+        # Display Basic Information: al SUMMARY sandbox info , file info ...
         self.output_text.insert(tk.END, self.format_section_header("Basic Information"))
-        for key, value in results['basic_info'].items():
+        for key, value in results.get('basic_info', {}).items():
             self.output_text.insert(tk.END, f"{key}: {value}\n")
         
-        # Display Signatures
-        if results['signatures']:
-            self.output_text.insert(tk.END, self.format_section_header("Detected Signatures"))
-            for sig in results['signatures']:
-                self.output_text.insert(tk.END, f"Name: {sig.get('name', 'Unknown')}\n")
-                if sig.get('description'):
-                    self.output_text.insert(tk.END, f"Description: {sig.get('description')}\n")
+        # 1. Display Dropped Files section: Ay files 7slha drop
+        self.output_text.insert(tk.END, self.format_section_header("Dropped Files"))
+        dropped_files = results.get('dropped_files', [])
+        if not dropped_files:
+            self.output_text.insert(tk.END, "No dropped files detected.\n")
+        else:
+            for file in dropped_files:
+                if isinstance(file, dict):
+                    self.output_text.insert(tk.END, f"Name: {file.get('name', 'Unknown')}\n")
+                    if file.get('type'):
+                        self.output_text.insert(tk.END, f"Type: {file.get('type')}\n")
+                    if file.get('sha256'):
+                        self.output_text.insert(tk.END, f"SHA256: {file.get('sha256')}\n")
+                    self.output_text.insert(tk.END, "\n")
+                else:
+                    self.output_text.insert(tk.END, f"File data: {file}\n\n")
+        
+        # 2. Display Processes section :al processes al a4t8lt m3ah
+        self.output_text.insert(tk.END, self.format_section_header("Processes"))
+        processes = results.get('processes', [])
+       
+        if not processes:
+            self.output_text.insert(tk.END, "No process information available.\n")
+        else:
+            for proc in processes:                    
+                self.output_text.insert(tk.END, f"uid: {proc.get('uid', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"parentuid: {proc.get('parentuid', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"name: {proc.get('name', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"normalized_path: {proc.get('normalized_path', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"command_line: {proc.get('command_line', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"sha256: {proc.get('sha256', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"av_label: {proc.get('av_label', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"av_matched: {proc.get('av_matched', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"av_total: {proc.get('av_total', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"pid: {proc.get('pid', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"icon: {proc.get('icon', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"file_accesses: {proc.get('file_accesses', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"created_files: {proc.get('created_files', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"registry:{proc.get('registry', 'Unknown')}\n")   
+                self.output_text.insert(tk.END, f"mutants:{proc.get('mutants', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"handles:{proc.get('handles', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"streams:{proc.get('streams', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"script_calls:{proc.get('script_calls', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"process_flags:{proc.get('process_flags', 'Unknown')}\n")
+                self.output_text.insert(tk.END, f"amsi_calls:{proc.get('amsi_calls', 'Unknown')}\n") 
+                self.output_text.insert(tk.END, f"modules:{proc.get('modules', 'Unknown')}\n")    
+                self.output_text.insert(tk.END, "\n")
+
+        # 3. Display MITRE ATT&CK section: eh pattern al attack al 7slt w hwa Knwoledge base
+        self.output_text.insert(tk.END, self.format_section_header("MITRE ATT&CK Techniques"))
+        mitre_attacks = results.get('mitre_attacks', [])
+        if not mitre_attacks:
+            self.output_text.insert(tk.END, "No MITRE ATT&CK techniques detected.\n")
+        else:
+            for attack in mitre_attacks:
+                
                 self.output_text.insert(tk.END, "-" * 40 + "\n")
-        
-        # Display Processes
-        if results['processes']:
-            self.output_text.insert(tk.END, self.format_section_header("Processes"))
-            for proc in results['processes']:
-                self.output_text.insert(tk.END, f"Process: {proc.get('process_name', 'Unknown')}\n")
-                if proc.get('command_line'):
-                    self.output_text.insert(tk.END, f"Command Line: {proc.get('command_line')}\n")
-                self.output_text.insert(tk.END, "\n")
-        
-        # Display Network Activity
-        if results['network_hosts']:
-            self.output_text.insert(tk.END, self.format_section_header("Network Activity"))
-            for host in results['network_hosts']:
-                hostname = host.get('hostname') or host.get('ip', 'Unknown')
-                self.output_text.insert(tk.END, f"Host: {hostname}\n")
-                if host.get('port'):
-                    self.output_text.insert(tk.END, f"Port: {host['port']}\n")
-                if host.get('protocol'):
-                    self.output_text.insert(tk.END, f"Protocol: {host['protocol']}\n")
-                self.output_text.insert(tk.END, "\n")
-        
-        # Display URLs
-        if results['extracted_urls']:
-            self.output_text.insert(tk.END, self.format_section_header("Extracted URLs"))
-            for url in results['extracted_urls']:
-                self.output_text.insert(tk.END, f"• {url}\n")
-        
-        # Display MITRE ATT&CK
-        if results['mitre_attacks']:
-            self.output_text.insert(tk.END, self.format_section_header("MITRE ATT&CK Techniques"))
-            for attack in results['mitre_attacks']:
+
+                self.output_text.insert(tk.END, f"Tactic: {attack.get('tactic', 'Unknown')}\n")
                 self.output_text.insert(tk.END, f"Technique: {attack.get('technique', 'Unknown')}\n")
+                if attack.get('attck_id'):
+                    self.output_text.insert(tk.END, f"ID: {attack.get('attck_id')}\n")
+                if attack.get('attck_id_wiki'):
+                    self.output_text.insert(tk.END, f"Wiki: {attack.get('attck_id_wiki')}\n")                   # Show identifier counts
+                if 'malicious_identifiers_count' in attack:
+                    self.output_text.insert(tk.END, f"Malicious Indicators: {attack.get('malicious_identifiers_count')}\n")
+                if 'suspicious_identifiers_count' in attack:
+                    self.output_text.insert(tk.END, f"Suspicious Indicators: {attack.get('suspicious_identifiers_count')}\n")
+                if 'informative_identifiers_count' in attack:
+                    self.output_text.insert(tk.END, f"Informative Indicators: {attack.get('informative_identifiers_count')}\n")
                 if attack.get('description'):
                     self.output_text.insert(tk.END, f"Description: {attack.get('description')}\n")
-                self.output_text.insert(tk.END, "\n")
+                # self.output_text.insert(tk.END, "\n")
+            # else:
+            #     self.output_text.insert(tk.END, f"MITRE data: {attack}\n\n")
+    
+    # 4. Display Network Activity section: ay IPs r7lha w al hosts
+        # if(results.get('network', [])):
+        #     self.output_text.insert(tk.END, self.format_section_header("Network Activity"))
+        #     network_hosts = results.get('network_hosts', [])
+        # else:
+        #     if not network_hosts:
+        #      self.output_text.insert(tk.END, "No network activity detected.\n")
+        #     else:
+        #         for host in network_hosts:
+        #             hostname = host.get('hostname') or host.get('ip', 'Unknown')
+        #             self.output_text.insert(tk.END, f"Host: {hostname}\n")
+        #             if host.get('port'):
+        #                 self.output_text.insert(tk.END, f"Port: {host['port']}\n")
+        #             if host.get('protocol'):
+        #                 self.output_text.insert(tk.END, f"Protocol: {host['protocol']}\n")
+        #             self.output_text.insert(tk.END, "\n")
         
-        # Display Dropped Files
-        if results['dropped_files']:
-            self.output_text.insert(tk.END, self.format_section_header("Dropped Files"))
-            for file in results['dropped_files']:
-                self.output_text.insert(tk.END, f"Name: {file.get('name', 'Unknown')}\n")
-                if file.get('type'):
-                    self.output_text.insert(tk.END, f"Type: {file.get('type')}\n")
-                if file.get('sha256'):
-                    self.output_text.insert(tk.END, f"SHA256: {file.get('sha256')}\n")
-                self.output_text.insert(tk.END, "\n")
+        # 5. Display Signatures grouped by category: mt2smen Categories w bt3rd kza 7aga ex: -process created, -file created, -Memory Usage
+        if results.get('signatures'):
+            self.output_text.insert(tk.END, self.format_section_header("Detected Signatures"))
+            
+            # Group signatures by category
+            signatures_by_category = {}
+            for sig in results.get('signatures', []):
+                category = sig.get('category', 'Uncategorized')
+                if category not in signatures_by_category:
+                    signatures_by_category[category] = []
+                signatures_by_category[category].append(sig)
+            
+            # Display signatures by category
+            for category, sigs in signatures_by_category.items():
+                self.output_text.insert(tk.END, f"\n【 {category} 】\n")
+                self.output_text.insert(tk.END, "-" * 40 + "\n")
+                
+                for sig in sigs:
+                    self.output_text.insert(tk.END, f"Name: {sig.get('name', 'Unknown')}\n")
+                    self.output_text.insert(tk.END, f"Threat Level: {sig.get('threat_level', 'Unknown')}\n")
+                    self.output_text.insert(tk.END, f"Threat Level Human: {sig.get('threat_level_human', 'Unknown')}\n")
+                    if sig.get('description'):
+                        self.output_text.insert(tk.END, f"Description: {sig.get('description')}\n")
+                    self.output_text.insert(tk.END, "-" * 40 + "\n")
         
-        # Display Interesting Behaviors
-        if results['interesting_behaviors']:
-            self.output_text.insert(tk.END, self.format_section_header("Interesting Behaviors"))
-            for key, value in results['interesting_behaviors'].items():
-                self.output_text.insert(tk.END, f"{key}:\n{value}\n\n")
+        # Display URLs section
+        # if(results.get('extracted_urls', [])):
+        #     self.output_text.insert(tk.END, self.format_section_header("Extracted URLs"))
+        #     extracted_urls = results.get('extracted_urls', [])
+        # if not extracted_urls:
+        #     self.output_text.insert(tk.END, "No URLs detected.\n")
+        # else:
+        #     for url in extracted_urls:
+        #         self.output_text.insert(tk.END, f"• {url}\n")
+        
+        # Display Interesting Behaviors section
+        # self.output_text.insert(tk.END, self.format_section_header("Interesting Behaviors"))
+        # interesting_behaviors = results.get('interesting_behaviors', {})
+        # if not isinstance(interesting_behaviors, dict) or not interesting_behaviors:
+        #     self.output_text.insert(tk.END, "No interesting behaviors detected.\n")
+        # else:
+        #     for key, value in interesting_behaviors.items():
+        #         self.output_text.insert(tk.END, f"{key}:\n{value}\n\n")
 
+                
     def export_pdf(self):
         try:
             os.makedirs(Config.OUTPUT_FOLDER, exist_ok=True)
