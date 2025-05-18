@@ -90,11 +90,13 @@ class MainWindow:
             width=70, height=32
         ).pack(side="left", padx=3)
 
-        # --- Main container and output frame ---
+        # Initialize analyzers 
+
         self.pe_analyzer = PEAnalyzer()
         self.vt_analyzer = VirusTotalAnalyzer()
         self.current_file = None
 
+        # --- Main container and output frame ---
         self.main_container = ctk.CTkFrame(self.root, fg_color="transparent")
         self.main_container.pack(fill="both", expand=True, padx=5, pady=5)
         self.setup_output_frame()
@@ -205,10 +207,12 @@ class MainWindow:
 
     def do_virustotal_analysis(self):
         if not self.current_file:
+            #then get the hash from the user
             hash_dialog = HashInputDialog(self.root)
             file_hash = hash_dialog.result
+            #if the hash is not provided, then show a message and terminate  the function
             if not file_hash:
-                self.output_text.delete(1.0, "end")
+                self.output_text.delete(1.0, "end") 
                 self.output_text.insert("end", "No hash provided. Operation cancelled.")
                 return
         else:
@@ -216,6 +220,7 @@ class MainWindow:
                 "VirusTotal Analysis",
                 "Use uploaded sample's hash?\n\nYes: Use uploaded sample\nNo: Enter a hash manually"
             )
+            #if the user chooses(i mean if the user clicks on yes) to use the uploaded sample, then get the hash from the pe_analyzer
             if choice:
                 file_hash = self.pe_analyzer.hashes.get('SHA256')
                 if not file_hash:
@@ -250,7 +255,7 @@ class MainWindow:
         self.output_text.insert(tk.END, f"SHA256: {results['hash']}\n")
         self.output_text.insert(tk.END, f"Type: {results['type']}\n")
         self.output_text.insert(tk.END, f"Size: {results['size']} bytes\n")
-        self.output_text.insert(tk.END, f"First Seen: {time.strftime('%Y-%m-%d', time.localtime(results['first_seen']))}\n")
+        self.output_text.insert(tk.END, f"First Seen: {time.strftime('%Y-%m-%d', time.localtime(results['first_seen']))}\n") #format the date to be more readable
         self.output_text.insert(tk.END, f"Last Analyzed: {time.strftime('%Y-%m-%d', time.localtime(results['last_seen']))}\n")
         self.output_text.insert(tk.END, f"Detection Rate: {results['malicious_count']} / {results['total_engines']}\n")
 
@@ -260,6 +265,7 @@ class MainWindow:
                 self.output_text.insert(tk.END, f"  - {name}\n")
 
         self.output_text.insert(tk.END, self.format_section_header("Malicious Detections"))
+        #loop through the analysis results  dict and print the malicious detections
         for engine, result in results['analysis_results'].items():
             if result.get('category') == 'malicious':
                 self.output_text.insert(tk.END, f"  - {engine}: {result.get('result', 'N/A')}\n")
