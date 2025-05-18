@@ -31,5 +31,7 @@ class VirusTotalAnalyzer:
             'malicious_count': stats.get('malicious', 0),
             'total_engines': sum(stats.values()),
             'names': attributes.get('names', []),
-            'analysis_results': attributes.get('last_analysis_results', {})
+            'analysis_results': attributes.get('last_analysis_results', {}),
+            'analysis_stats': stats,
+            'undetected_count': stats.get('undetected', 0)
         } 

@@ -255,9 +255,18 @@ class MainWindow:
         self.output_text.insert(tk.END, f"SHA256: {results['hash']}\n")
         self.output_text.insert(tk.END, f"Type: {results['type']}\n")
         self.output_text.insert(tk.END, f"Size: {results['size']} bytes\n")
-        self.output_text.insert(tk.END, f"First Seen: {time.strftime('%Y-%m-%d', time.localtime(results['first_seen']))}\n") #format the date to be more readable
+        self.output_text.insert(tk.END, f"First Seen: {time.strftime('%Y-%m-%d', time.localtime(results['first_seen']))}\n")
         self.output_text.insert(tk.END, f"Last Analyzed: {time.strftime('%Y-%m-%d', time.localtime(results['last_seen']))}\n")
         self.output_text.insert(tk.END, f"Detection Rate: {results['malicious_count']} / {results['total_engines']}\n")
+        #analysis statistics
+        self.output_text.insert(tk.END, self.format_section_header("Analysis Statistics"))
+        stats = results['analysis_stats']
+        self.output_text.insert(tk.END, f"Malicious: {stats.get('malicious', 0)}\n")
+        self.output_text.insert(tk.END, f"Suspicious: {stats.get('suspicious', 0)}\n")
+        self.output_text.insert(tk.END, f"Undetected: {stats.get('undetected', 0)}\n")
+        self.output_text.insert(tk.END, f"Harmless: {stats.get('harmless', 0)}\n")
+        self.output_text.insert(tk.END, f"Timeout: {stats.get('timeout', 0)}\n")
+        self.output_text.insert(tk.END, f"Type Unsupported: {stats.get('type-unsupported', 0)}\n")
 
         if results['names']:
             self.output_text.insert(tk.END, self.format_section_header("Known Names"))
@@ -265,10 +274,15 @@ class MainWindow:
                 self.output_text.insert(tk.END, f"  - {name}\n")
 
         self.output_text.insert(tk.END, self.format_section_header("Malicious Detections"))
-        #loop through the analysis results  dict and print the malicious detections
         for engine, result in results['analysis_results'].items():
             if result.get('category') == 'malicious':
                 self.output_text.insert(tk.END, f"  - {engine}: {result.get('result', 'N/A')}\n")
+
+        # Undetected Engines
+        self.output_text.insert(tk.END, self.format_section_header("Undetected Engines"))
+        for engine, result in results['analysis_results'].items():
+            if result.get('category') == 'undetected':
+                self.output_text.insert(tk.END, f"  - {engine} (version: {result.get('engine_version', 'N/A')})\n")
 
     def do_dynamic_analysis(self):
         if not self.current_file:
