@@ -4,7 +4,7 @@
 <img src="/ScreenShots/Home_interface.png" width="800" height="450" alt="Main Interface">
 <img src="/ScreenShots/Analysis_Result.png" width="800" height="450" alt="Analysis Results">
 <img src="/ScreenShots/Report_Generation.png" width="800" height="450" alt="Report Generation">
-<img src="/ScreenShots/HTML_Export.jpeg" width="800" height="450" alt="HTML Export">
+<img src="/ScreenShots/HTML_Export.jpeg" width="800" alt="HTML Export">
 <img src="/ScreenShots/Dark_Mode.png" width="800" height="450" alt="Dark Mode Interface">
 </div>
 
